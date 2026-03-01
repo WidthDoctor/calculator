@@ -1,118 +1,127 @@
-const numbers = document.querySelectorAll(".number");
-const operations = document.querySelectorAll(".operator");
-const clearBtns = document.querySelectorAll(".clear-btn");
-const decimalBtn = document.getElementById("decimal");
-const radixBtn = document.getElementById("radix");
-const result = document.getElementById("result");
+const numberButtons = document.querySelectorAll(".number");
+const operatorButtons = document.querySelectorAll(".operator");
+const clearButtons = document.querySelectorAll(".clear-btn");
+const decimalButton = document.getElementById("decimal");
+const radixButton = document.getElementById("radix");
 const display = document.getElementById("display");
-const convertBtn = document.getElementById("convert");
-let MemoryCurrentNumber = 0;
-let MemoryNewNumber = false;
-let MemoryPendingOperation = "";
+const convertButton = document.getElementById("convert");
+
+let memoryCurrentNumber = 0;
+let memoryNewNumber = false;
+let memoryPendingOperation = "";
+
+function formatNumber(value) {
+  if (!Number.isFinite(value)) {
+    return value;
+  }
+
+  return parseFloat(value.toFixed(12));
+}
+
+function setDisplayValue(value) {
+  display.value = String(formatNumber(value));
+}
+
+function getDisplayValue() {
+  return Number(display.value);
+}
+
 function numberPress(number) {
-  if (MemoryNewNumber) {
+  if (memoryNewNumber) {
     display.value = number;
-    MemoryNewNumber = false;
-  } else {
-    if (display.value === "0") {
-      display.value = number;
-    } else {
-      display.value += number;
-    }
+    memoryNewNumber = false;
+    return;
+  }
+
+  display.value = display.value === "0" ? number : display.value + number;
+}
+
+function runPendingOperation(currentValue) {
+  switch (memoryPendingOperation) {
+    case "+":
+      return memoryCurrentNumber + currentValue;
+    case "-":
+      return memoryCurrentNumber - currentValue;
+    case "*":
+      return memoryCurrentNumber * currentValue;
+    case "/":
+      return memoryCurrentNumber / currentValue;
+    case "Xy":
+      return Math.pow(memoryCurrentNumber, currentValue);
+    default:
+      return currentValue;
   }
 }
-for (var i = 0; i < numbers.length; i++) {
-  var number = numbers[i];
-  number.addEventListener("click", function (e) {
-    numberPress(e.target.textContent);
-  });
-}
-for (var i = 0; i < operations.length; i++) {
-  var operationBtn = operations[i];
-  operationBtn.addEventListener("click", function (e) {
-    operationPress(e.target.textContent);
 
-  });
-}
+function operationPress(operation) {
+  if (memoryNewNumber && memoryPendingOperation !== "=") {
+    memoryPendingOperation = operation;
+    return;
+  }
 
-for (var i = 0; i < clearBtns.length; i++) {
-  var clearBtn = clearBtns[i];
-  clearBtn.addEventListener("click", function (e) {
-    clear(e.target.textContent);
-  });
+  const currentValue = getDisplayValue();
+  memoryCurrentNumber = runPendingOperation(currentValue);
+  setDisplayValue(memoryCurrentNumber);
+
+  memoryNewNumber = true;
+  memoryPendingOperation = operation;
 }
 
-radixBtn.addEventListener("click", function (e) {
-  display.value =+ Math.sqrt(display.value);
-  MemoryCurrentNumber=display.value;
-  MemoryNewNumber = false;
+function decimalPress() {
+  if (memoryNewNumber) {
+    display.value = "0.";
+    memoryNewNumber = false;
+    return;
+  }
+
+  if (!display.value.includes(".")) {
+    display.value += ".";
+  }
+}
+
+function clearPress(buttonText) {
+  const normalizedText = buttonText.toLowerCase();
+
+  if (normalizedText === "ce") {
+    display.value = "0";
+    memoryNewNumber = true;
+    return;
+  }
+
+  if (normalizedText === "c") {
+    display.value = "0";
+    memoryNewNumber = true;
+    memoryCurrentNumber = 0;
+    memoryPendingOperation = "";
+  }
+}
+
+numberButtons.forEach((button) => {
+  button.addEventListener("click", (event) => {
+    numberPress(event.target.textContent);
+  });
 });
 
-function operationPress(op) {
-  let localOperationMemory = display.value;
-  if (MemoryNewNumber && MemoryPendingOperation !== "=") {
-    console.log("if");
-    display.value = MemoryCurrentNumber;
-  } else {
-    MemoryNewNumber = true;
-    if (MemoryPendingOperation === "+") {
-      MemoryCurrentNumber += +localOperationMemory;
-    } else if (MemoryPendingOperation === "-") {
-      MemoryCurrentNumber -= +localOperationMemory;
-    } else if (MemoryPendingOperation === "*") {
-      MemoryCurrentNumber *= +localOperationMemory;
-    } else if (MemoryPendingOperation === "/") {
-      MemoryCurrentNumber /= +localOperationMemory;
-    } else if (MemoryPendingOperation === "Xy") {
-      MemoryCurrentNumber = Math.pow(MemoryCurrentNumber, localOperationMemory);
-    } else{
-      console.log("else");
-      MemoryCurrentNumber = +localOperationMemory;
-
-    }
-    if (MemoryCurrentNumber === 0.30000000000000004||MemoryCurrentNumber === -0.30000000000000004||
-      MemoryCurrentNumber === 1.2000000000000002||MemoryCurrentNumber === -1.2000000000000002) {
-      display.value = MemoryCurrentNumber.toFixed(1);
-    }else if(MemoryCurrentNumber === -0.020000000000000004||MemoryCurrentNumber === 0.020000000000000004){
-      display.value = MemoryCurrentNumber.toFixed(2);
-    }else if(MemoryCurrentNumber === 255.99999999999997||MemoryCurrentNumber === -255.99999999999997){
-      display.value = Math.ceil(MemoryCurrentNumber);
-    }else if (MemoryCurrentNumber=== -256.51199999999994){
-      display.value = MemoryCurrentNumber.toFixed(3);
-    }else{
-      display.value = MemoryCurrentNumber;
-      MemoryPendingOperation = op;
-    }
-  }
-}
-decimalBtn.addEventListener("click", decimal);
-function decimal(argument) {
-  let localDecimalMemory = display.value;
-
-  if (MemoryNewNumber) {
-    localDecimalMemory = "0.";
-    MemoryNewNumber = false;
-  } else {
-    if (localDecimalMemory.indexOf(".") === -1) {
-      localDecimalMemory += ".";
-    }
-  }
-  display.value = localDecimalMemory;
-}
-function clear(id) {
-  if (id === "ce") {
-    display.value = "0";
-    MemoryNewNumber = true;
-  } else if (id === "c") {
-    display.value = "0";
-    MemoryNewNumber = true;
-    MemoryCurrentNumber = 0;
-    MemoryPendingOperation = "";
-  }
-}
-convertBtn.addEventListener("click", function (e) {
-  let localOperationMemory = display.value;
-  display.value = -Math.abs(localOperationMemory);
+operatorButtons.forEach((button) => {
+  button.addEventListener("click", (event) => {
+    operationPress(event.target.textContent);
+  });
 });
 
+clearButtons.forEach((button) => {
+  button.addEventListener("click", (event) => {
+    clearPress(event.target.textContent);
+  });
+});
 
+radixButton.addEventListener("click", () => {
+  memoryCurrentNumber = Math.sqrt(getDisplayValue());
+  setDisplayValue(memoryCurrentNumber);
+  memoryNewNumber = false;
+});
+
+decimalButton.addEventListener("click", decimalPress);
+
+convertButton.addEventListener("click", () => {
+  setDisplayValue(-getDisplayValue());
+});
